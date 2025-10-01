@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Search, X, ArrowUp } from "lucide-react";
+import { Search, X } from "lucide-react";
 import {
   GiSeaDragon,
   GiFluffyWing,
@@ -21,8 +21,7 @@ import { IoWaterOutline } from "react-icons/io5";
 import { AiFillThunderbolt } from "react-icons/ai";
 import { MdDarkMode } from "react-icons/md";
 import { LuSnowflake } from "react-icons/lu";
-import { FaEye, FaSkullCrossbones, FaGithub, FaLinkedin  } from "react-icons/fa";
-import { MdCatchingPokemon } from "react-icons/md";
+import { FaEye, FaSkullCrossbones, FaCrown } from "react-icons/fa";
 
 interface Pokemon {
   id: number;
@@ -37,7 +36,7 @@ interface Pokemon {
 }
 
 const Home: React.FC = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [pokemon, setPokemon] = useState<Pokemon[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -48,8 +47,6 @@ const Home: React.FC = () => {
   const [hoveredPokemon, setHoveredPokemon] = useState<number | null>(null);
   const [showGenDropdown, setShowGenDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const [displayCount, setDisplayCount] = useState(100);
 
   const typeColors: { [key: string]: string } = {
     normal: "#A8A878",
@@ -93,6 +90,15 @@ const Home: React.FC = () => {
     fairy: <GiFairyWings size={18} />,
   };
 
+  const legendaryPokemon = [
+    144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379, 380,
+    381, 382, 383, 384, 385, 386, 480, 481, 482, 483, 484, 485, 486, 487, 488,
+    489, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646,
+    647, 648, 649, 716, 717, 718, 719, 720, 721, 772, 773, 785, 786, 787, 788,
+    789, 790, 791, 792, 800, 801, 802, 807, 808, 809, 888, 889, 890, 891, 892,
+    893, 894, 895, 896, 897, 898,
+  ];
+
   const generationRanges = [
     { gen: 1, start: 1, end: 151, name: "Generation I" },
     { gen: 2, start: 152, end: 251, name: "Generation II" },
@@ -104,34 +110,9 @@ const Home: React.FC = () => {
     { gen: 8, start: 810, end: 905, name: "Generation VIII" },
   ];
 
-  const legendaryPokemon = [
-    144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379, 380,
-    381, 382, 383, 384, 385, 386, 480, 481, 482, 483, 484, 485, 486, 487, 488,
-    489, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646,
-    647, 648, 649, 716, 717, 718, 719, 720, 721, 772, 773, 785, 786, 787, 788,
-    789, 790, 791, 792, 800, 801, 802, 807, 808, 809, 888, 889, 890, 891, 892,
-    893, 894, 895, 896, 897, 898,
-  ];
-
   const getGeneration = (id: number) => {
     const gen = generationRanges.find((g) => id >= g.start && id <= g.end);
     return gen ? gen.gen : 1;
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
   };
 
   useEffect(() => {
@@ -187,18 +168,6 @@ const Home: React.FC = () => {
     );
   });
 
-  const displayedPokemon = filteredPokemon.slice(0, displayCount);
-  const hasMore = displayCount < filteredPokemon.length;
-
-  const loadMore = () => {
-    setDisplayCount(prev => prev + 100);
-  };
-
-  // Reset display count when filters change
-  useEffect(() => {
-    setDisplayCount(100);
-  }, [searchTerm, selectedType, selectedGeneration, showLegendaryOnly]);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-500 to-red-600">
@@ -215,97 +184,43 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
       {/* Header */}
-      <div className="bg-red-700 relative overflow-hidden">
-        {/* Wavy bottom border with animation */}
-        <svg
-          className="absolute bottom-0 left-0 w-full"
-          viewBox="0 0 1440 100"
-          preserveAspectRatio="none"
-          style={{ height: '60px' }}
-        >
-          <defs>
-            <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#000000" stopOpacity="0.9" />
-              <stop offset="50%" stopColor="#1a1a1a" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#000000" stopOpacity="0.9" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0,20 C240,90 480,20 720,50 C960,80 1200,20 1440,90 L1440,100 L0,100 Z"
-            fill="url(#waveGradient)"
-          >
-            <animate
-              attributeName="d"
-              dur="8s"
-              repeatCount="indefinite"
-              values="
-                M0,50 C240,80 480,20 720,50 C960,80 1200,20 1440,50 L1440,100 L0,100 Z;
-                M0,50 C240,20 480,80 720,50 C960,20 1200,80 1440,50 L1440,100 L0,100 Z;
-                M0,50 C240,80 480,20 720,50 C960,80 1200,20 1440,50 L1440,100 L0,100 Z"
-            />
-          </path>
-          <path
-            d="M0,60 C240,90 480,30 720,60 C960,90 1200,30 1440,60 L1440,100 L0,100 Z"
-            fill="#000000"
-            opacity="0.5"
-          >
-            <animate
-              attributeName="d"
-              dur="10s"
-              repeatCount="indefinite"
-              values="
-                M0,60 C240,90 480,30 720,60 C960,90 1200,30 1440,60 L1440,100 L0,100 Z;
-                M0,60 C240,30 480,90 720,60 C960,30 1200,90 1440,60 L1440,100 L0,100 Z;
-                M0,60 C240,90 480,30 720,60 C960,90 1200,30 1440,60 L1440,100 L0,100 Z"
-            />
-          </path>
-        </svg>
+      <div className="bg-red-600 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 py-5">
           <div className="flex items-center justify-between mb-5">
-            {/* Left Side - Pokeball Button and Lights */}
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full border-3 border-white shadow-xl flex items-center justify-center relative flex-shrink-0 hover:scale-110 transition-transform cursor-pointer">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-800 rounded-full"></div>
                 <div className="absolute w-3.5 h-3.5 bg-white rounded-full opacity-80 transform -translate-x-2 -translate-y-2"></div>
               </div>
-
-              <div className="flex gap-2 items-center">
-                <div className="w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+              <div className="flex gap-2">
+                <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
                 <div
-                  className="w-3.5 h-3.5 bg-yellow-400 rounded-full border-2 border-white shadow-lg animate-pulse"
+                  className="w-4 h-4 bg-yellow-600 rounded-full border-2 border-white shadow-lg animate-pulse"
                   style={{ animationDelay: "0.2s" }}
                 ></div>
                 <div
-                  className="w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white shadow-lg animate-pulse"
+                  className="w-4 h-4 bg-green-700 rounded-full border-2 border-white shadow-lg animate-pulse"
                   style={{ animationDelay: "0.4s" }}
                 ></div>
               </div>
             </div>
-
-            {/* Center - Logo */}
             <div className="flex-shrink-0">
               <img
                 src="/pokedex_logo.png"
                 alt="Pokedex Logo"
-                className="h-14 w-auto object-contain drop-shadow-xl"
+                className="h-16 lg:h-18 w-auto object-contain drop-shadow-xl"
               />
             </div>
-
-            {/* Right Side - Pokeball */}
-            <div
-              className="animate-spin flex-shrink-0"
-              style={{ animationDuration: "20s" }}
-            >
+            <div className="flex-shrink-0">
               <img
                 src="/pball.png"
                 alt="Pokeball"
-                className="w-14 h-14 object-contain"
+                className="w-14 h-14 object-contain lg:w-16 lg:h-16 animate-spin"
+                style={{ animationDuration: "20s" }}
               />
             </div>
           </div>
-
-          {/* Search Bar */}
-          <div className="relative max-w-4xl mx-auto mb-16">
+          <div className="relative max-w-4xl mx-auto">
             <Search
               className="absolute left-4 top-1/2 transform -translate-y-1/2 text-red-400"
               size={20}
@@ -315,7 +230,7 @@ const Home: React.FC = () => {
               placeholder="Search Pokémon..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-black pl-12 pr-12 py-3.5 rounded-2xl border-2 border-red-800 text-base focus:outline-none shadow-xl transition-all"
+              className="w-full pl-12 pr-12 py-3.5 rounded-xl border-2 border-red-800 text-base focus:outline-none focus:ring-2 focus:ring-yellow-400 shadow-xl transition-all"
             />
             {searchTerm && (
               <button
@@ -329,59 +244,17 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      {/* Types */}
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        <h2 className="text-white text-3xl font-bold mb-6">Types</h2>
-
-        <div className="flex flex-wrap gap-3 justify-center">
-          {Object.keys(typeColors).map((type) => (
-            <button
-              key={type}
-              onClick={() =>
-                setSelectedType(selectedType === type ? null : type)
-              }
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white transition-all duration-300 ${
-                selectedType === type
-                  ? "ring-4 ring-white scale-105"
-                  : selectedType
-                  ? "opacity-40"
-                  : "hover:scale-105"
-              }`}
-              style={{
-                backgroundColor: typeColors[type],
-              }}
-            >
-              <span className="text-xl">{typeIcons[type]}</span>
-              <span className="capitalize text-sm">{type}</span>
-            </button>
-          ))}
-        </div>
-
-        {selectedType && (
-          <div className="mt-8 p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10">
-            <p className="text-white text-lg">
-              <span className="text-gray-400">Filtering by:</span>{" "}
-              <span
-                className="font-bold text-xl ml-2"
-                style={{ color: typeColors[selectedType] }}
-              >
-                {selectedType.toUpperCase()}
-              </span>
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/*Sorting*/}
+      {/* Sorting */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="mb-6">
-          <h2 className="text-white text-3xl font-bold mb-2">Pokémons</h2>
+          <h2 className="text-white text-3xl font-bold mb-2">
+            Select your Pokémon ({filteredPokemon.length})
+          </h2>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Game Generation Dropdown */}
           <div className="relative">
-            <h3 className="text-red-500 font-bold mb-3 text-lg">
+            <h3 className="text-orange-400 font-bold mb-3 text-lg">
               Game Generation
             </h3>
             <button
@@ -480,7 +353,7 @@ const Home: React.FC = () => {
 
           {/* Sort Pokemon Dropdown */}
           <div className="relative">
-            <h3 className="text-blue-500 font-bold mb-3 text-lg">
+            <h3 className="text-orange-400 font-bold mb-3 text-lg">
               Sort Pokémon
             </h3>
             <button
@@ -533,7 +406,7 @@ const Home: React.FC = () => {
                       : "text-gray-300"
                   }`}
                 >
-                  <MdCatchingPokemon size={16} />
+                  <FaCrown size={16} />
                   Legendary
                 </button>
               </div>
@@ -542,15 +415,50 @@ const Home: React.FC = () => {
         </div>
       </div>
 
+      {/* Types */}
+      <div className="max-w-7xl mx-auto px-4 py-10">
+        <h2 className="text-white text-3xl font-bold mb-6">Types</h2>
+        <div className="flex flex-wrap gap-3 justify-center">
+          {Object.keys(typeColors).map((type) => (
+            <button
+              key={type}
+              onClick={() =>
+                setSelectedType(selectedType === type ? null : type)
+              }
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white transition-all duration-300 ${
+                selectedType === type
+                  ? "ring-4 ring-white scale-105"
+                  : selectedType
+                  ? "opacity-40"
+                  : "hover:scale-105"
+              }`}
+              style={{ backgroundColor: typeColors[type] }}
+            >
+              <span className="text-xl">{typeIcons[type]}</span>
+              <span className="capitalize text-sm">{type}</span>
+            </button>
+          ))}
+        </div>
+        {selectedType && (
+          <div className="mt-8 p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10">
+            <p className="text-white text-lg">
+              <span className="text-gray-400">Filtering by:</span>{" "}
+              <span
+                className="font-bold text-xl ml-2"
+                style={{ color: typeColors[selectedType] }}
+              >
+                {selectedType.toUpperCase()}
+              </span>
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Pokemon Grid */}
       <div className="max-w-7xl mx-auto px-4 pb-10">
         <div className="mb-6">
           <p className="text-gray-400 text-lg">
             Showing{" "}
-            <span className="text-white font-bold">
-              {displayedPokemon.length}
-            </span>{" "}
-            of{" "}
             <span className="text-white font-bold">
               {filteredPokemon.length}
             </span>{" "}
@@ -558,7 +466,7 @@ const Home: React.FC = () => {
           </p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {displayedPokemon.map((p) => (
+          {filteredPokemon.map((p) => (
             <div
               key={p.id}
               className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-4 border border-gray-700 hover:border-gray-500 transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer group relative"
@@ -567,7 +475,7 @@ const Home: React.FC = () => {
             >
               {p.isLegendary && (
                 <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
-                  <MdCatchingPokemon size={10} />
+                  <FaCrown size={10} />
                   Legendary
                 </div>
               )}
@@ -599,69 +507,13 @@ const Home: React.FC = () => {
             </div>
           ))}
         </div>
-        
         {filteredPokemon.length === 0 && (
           <div className="text-center py-20">
             <div className="text-gray-500 text-2xl mb-4">No Pokémon found</div>
             <p className="text-gray-600">Try adjusting your search or filter</p>
           </div>
         )}
-
-        {/* Load More Button */}
-        {hasMore && (
-          <div className="mt-8 text-center">
-            <button
-              onClick={loadMore}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-            >
-              Load More Pokémon ({filteredPokemon.length - displayCount} remaining)
-            </button>
-          </div>
-        )}
       </div>
-
-      {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-8 right-8 bg-gradient-to-br from-red-500 to-red-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 z-50 hover:from-red-600 hover:to-red-700 group"
-          aria-label="Scroll to top"
-        >
-          <ArrowUp size={24} className="group-hover:animate-bounce" />
-        </button>
-      )}
-
-      {/* Footer */}
-      <footer className="mt-12 pb-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-white text-xl font-bold mb-1">Renato G Santos</h3>
-                <p className="text-gray-400 text-sm">renato.work.art@gmail.com</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <a
-                  href="https://github.com/jnkarim"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-all duration-300 hover:scale-110"
-                >
-                  <FaGithub size={28} />
-                </a>
-                <a
-                  href="https://linkedin.com/in/jnkarim"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-blue-500 transition-all duration-300 hover:scale-110"
-                >
-                  <FaLinkedin size={28} />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
