@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Search, X, ArrowUp } from "lucide-react";
 import {
   GiSeaDragon,
@@ -23,8 +23,8 @@ import { MdDarkMode } from "react-icons/md";
 import { LuSnowflake } from "react-icons/lu";
 import { FaEye, FaSkullCrossbones, FaGithub, FaLinkedin } from "react-icons/fa";
 import { MdCatchingPokemon } from "react-icons/md";
-import { useRouter } from 'next/navigation';
 
+import PokedexModal from "@/app/components/PokedexModal";
 
 interface Pokemon {
   id: number;
@@ -43,15 +43,17 @@ const Home: React.FC = () => {
   const [pokemon, setPokemon] = useState<Pokemon[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [selectedGeneration, setSelectedGeneration] = useState<number | null>(
-    null
-  );
+  const [selectedGeneration, setSelectedGeneration] = useState<number | null>(null);
   const [showLegendaryOnly, setShowLegendaryOnly] = useState(false);
   const [hoveredPokemon, setHoveredPokemon] = useState<number | null>(null);
   const [showGenDropdown, setShowGenDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [displayCount, setDisplayCount] = useState(100);
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalPokemonId, setModalPokemonId] = useState<number>(1);
 
   const typeColors: { [key: string]: string } = {
     normal: "#A8A878",
@@ -95,6 +97,7 @@ const Home: React.FC = () => {
     fairy: <GiFairyWings size={18} />,
   };
 
+  // ✅ Include Gen IX so IDs up to 1025 are handled
   const generationRanges = [
     { gen: 1, start: 1, end: 151, name: "Generation I" },
     { gen: 2, start: 152, end: 251, name: "Generation II" },
@@ -104,6 +107,7 @@ const Home: React.FC = () => {
     { gen: 6, start: 650, end: 721, name: "Generation VI" },
     { gen: 7, start: 722, end: 809, name: "Generation VII" },
     { gen: 8, start: 810, end: 905, name: "Generation VIII" },
+    { gen: 9, start: 906, end: 1025, name: "Generation IX" },
   ];
 
   const legendaryPokemon = [
@@ -124,25 +128,19 @@ const Home: React.FC = () => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   useEffect(() => {
     const fetchPokemon = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          "https://pokeapi.co/api/v2/pokemon?limit=1025"
-        );
+        const response = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1025");
         const data = await response.json();
 
         const pokemonDetails = await Promise.all(
@@ -155,13 +153,13 @@ const Home: React.FC = () => {
               types: detail.types.map((t: any) => t.type.name),
               image: detail.sprites.other["official-artwork"].front_default,
               animatedImage:
-                detail.sprites.versions?.["generation-v"]?.["black-white"]
-                  ?.animated?.front_default || detail.sprites.front_default,
+                detail.sprites.versions?.["generation-v"]?.["black-white"]?.animated?.front_default ||
+                detail.sprites.front_default,
               height: detail.height,
               weight: detail.weight,
               generation: getGeneration(detail.id),
               isLegendary: legendaryPokemon.includes(detail.id),
-            };
+            } as Pokemon;
           })
         );
 
@@ -174,27 +172,22 @@ const Home: React.FC = () => {
     };
 
     fetchPokemon();
-  }, []);
+  }, []); // initial load
 
   const filteredPokemon = pokemon.filter((p) => {
     const matchesSearch =
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.id.toString().includes(searchTerm);
     const matchesType = !selectedType || p.types.includes(selectedType);
-    const matchesGeneration =
-      !selectedGeneration || p.generation === selectedGeneration;
+    const matchesGeneration = !selectedGeneration || p.generation === selectedGeneration;
     const matchesLegendary = !showLegendaryOnly || p.isLegendary;
-    return (
-      matchesSearch && matchesType && matchesGeneration && matchesLegendary
-    );
+    return matchesSearch && matchesType && matchesGeneration && matchesLegendary;
   });
 
   const displayedPokemon = filteredPokemon.slice(0, displayCount);
   const hasMore = displayCount < filteredPokemon.length;
 
-  const loadMore = () => {
-    setDisplayCount((prev) => prev + 100);
-  };
+  const loadMore = () => setDisplayCount((prev) => prev + 100);
 
   // Reset display count when filters change
   useEffect(() => {
@@ -213,6 +206,12 @@ const Home: React.FC = () => {
       </div>
     );
   }
+
+  // Helper to open modal with selected Pokémon ID
+  const openModalFor = (id: number) => {
+    setModalPokemonId(id);
+    setModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
@@ -294,24 +293,14 @@ const Home: React.FC = () => {
             </div>
 
             {/* Right Side - Pokeball */}
-            <div
-              className="animate-spin flex-shrink-0"
-              style={{ animationDuration: "20s" }}
-            >
-              <img
-                src="/pball.png"
-                alt="Pokeball"
-                className="w-16 h-16 object-contain"
-              />
+            <div className="animate-spin flex-shrink-0" style={{ animationDuration: "20s" }}>
+              <img src="/pball.png" alt="Pokeball" className="w-16 h-16 object-contain" />
             </div>
           </div>
 
           {/* Search Bar */}
           <div className="relative max-w-4xl mx-auto mb-16">
-            <Search
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-red-400"
-              size={20}
-            />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-red-400" size={20} />
             <input
               type="text"
               placeholder="Search Pokémon..."
@@ -322,7 +311,7 @@ const Home: React.FC = () => {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-800 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
               >
                 <X size={20} />
               </button>
@@ -339,9 +328,7 @@ const Home: React.FC = () => {
           {Object.keys(typeColors).map((type) => (
             <button
               key={type}
-              onClick={() =>
-                setSelectedType(selectedType === type ? null : type)
-              }
+              onClick={() => setSelectedType(selectedType === type ? null : type)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white transition-all duration-300 ${
                 selectedType === type
                   ? "ring-4 ring-white scale-105"
@@ -349,9 +336,7 @@ const Home: React.FC = () => {
                   ? "opacity-40"
                   : "hover:scale-105"
               }`}
-              style={{
-                backgroundColor: typeColors[type],
-              }}
+              style={{ backgroundColor: typeColors[type] }}
             >
               <span className="text-xl">{typeIcons[type]}</span>
               <span className="capitalize text-sm">{type}</span>
@@ -363,10 +348,7 @@ const Home: React.FC = () => {
           <div className="mt-8 p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10">
             <p className="text-white text-lg">
               <span className="text-gray-400">Filtering by:</span>{" "}
-              <span
-                className="font-bold text-xl ml-2"
-                style={{ color: typeColors[selectedType] }}
-              >
+              <span className="font-bold text-xl ml-2" style={{ color: typeColors[selectedType] }}>
                 {selectedType.toUpperCase()}
               </span>
             </p>
@@ -374,7 +356,7 @@ const Home: React.FC = () => {
         )}
       </div>
 
-      {/*Sorting*/}
+      {/* Sorting */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="mb-6">
           <h2 className="text-white text-3xl font-bold mb-2">Pokémons</h2>
@@ -383,9 +365,7 @@ const Home: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Game Generation Dropdown */}
           <div className="relative">
-            <h3 className="text-red-500 font-bold mb-3 text-lg">
-              Game Generation
-            </h3>
+            <h3 className="text-red-500 font-bold mb-3 text-lg">Game Generation</h3>
             <button
               onClick={() => {
                 setShowGenDropdown(!showGenDropdown);
@@ -410,24 +390,19 @@ const Home: React.FC = () => {
                         ? "VI"
                         : selectedGeneration === 7
                         ? "VII"
-                        : "VIII"
+                        : selectedGeneration === 8
+                        ? "VIII"
+                        : "IX"
                     }`
                   : "All"}
               </span>
               <svg
-                className={`w-5 h-5 transition-transform ${
-                  showGenDropdown ? "rotate-180" : ""
-                }`}
+                className={`w-5 h-5 transition-transform ${showGenDropdown ? "rotate-180" : ""}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {showGenDropdown && (
@@ -438,9 +413,7 @@ const Home: React.FC = () => {
                     setShowGenDropdown(false);
                   }}
                   className={`w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors ${
-                    selectedGeneration === null
-                      ? "bg-gray-700 text-white"
-                      : "text-gray-300"
+                    selectedGeneration === null ? "bg-gray-700 text-white" : "text-gray-300"
                   }`}
                 >
                   All
@@ -453,27 +426,10 @@ const Home: React.FC = () => {
                       setShowGenDropdown(false);
                     }}
                     className={`w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors ${
-                      selectedGeneration === gen.gen
-                        ? "bg-gray-700 text-white"
-                        : "text-gray-300"
+                      selectedGeneration === gen.gen ? "bg-gray-700 text-white" : "text-gray-300"
                     }`}
                   >
-                    Generation{" "}
-                    {gen.gen === 1
-                      ? "I"
-                      : gen.gen === 2
-                      ? "II"
-                      : gen.gen === 3
-                      ? "III"
-                      : gen.gen === 4
-                      ? "IV"
-                      : gen.gen === 5
-                      ? "V"
-                      : gen.gen === 6
-                      ? "VI"
-                      : gen.gen === 7
-                      ? "VII"
-                      : "VIII"}
+                    Generation {["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"][gen.gen - 1]}
                   </button>
                 ))}
               </div>
@@ -482,9 +438,7 @@ const Home: React.FC = () => {
 
           {/* Sort Pokemon Dropdown */}
           <div className="relative">
-            <h3 className="text-blue-500 font-bold mb-3 text-lg">
-              Sort Pokémon
-            </h3>
+            <h3 className="text-blue-500 font-bold mb-3 text-lg">Sort Pokémon</h3>
             <button
               onClick={() => {
                 setShowSortDropdown(!showSortDropdown);
@@ -494,19 +448,12 @@ const Home: React.FC = () => {
             >
               <span>{showLegendaryOnly ? "Legendary" : "Number"}</span>
               <svg
-                className={`w-5 h-5 transition-transform ${
-                  showSortDropdown ? "rotate-180" : ""
-                }`}
+                className={`w-5 h-5 transition-transform ${showSortDropdown ? "rotate-180" : ""}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {showSortDropdown && (
@@ -517,9 +464,7 @@ const Home: React.FC = () => {
                     setShowSortDropdown(false);
                   }}
                   className={`w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors ${
-                    !showLegendaryOnly
-                      ? "bg-gray-700 text-white"
-                      : "text-gray-300"
+                    !showLegendaryOnly ? "bg-gray-700 text-white" : "text-gray-300"
                   }`}
                 >
                   Number
@@ -530,9 +475,7 @@ const Home: React.FC = () => {
                     setShowSortDropdown(false);
                   }}
                   className={`w-full text-left px-4 py-3 hover:bg-gray-700 transition-colors flex items-center gap-2 ${
-                    showLegendaryOnly
-                      ? "bg-gray-700 text-white"
-                      : "text-gray-300"
+                    showLegendaryOnly ? "bg-gray-700 text-white" : "text-gray-300"
                   }`}
                 >
                   <MdCatchingPokemon size={16} />
@@ -548,24 +491,19 @@ const Home: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 pb-10">
         <div className="mb-6">
           <p className="text-gray-400 text-lg">
-            Showing{" "}
-            <span className="text-white font-bold">
-              {displayedPokemon.length}
-            </span>{" "}
-            of{" "}
-            <span className="text-white font-bold">
-              {filteredPokemon.length}
-            </span>{" "}
-            Pokémon
+            Showing <span className="text-white font-bold">{displayedPokemon.length}</span> of{" "}
+            <span className="text-white font-bold">{filteredPokemon.length}</span> Pokémon
           </p>
         </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {displayedPokemon.map((p) => (
-            <div
+            <button
               key={p.id}
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-4 border border-gray-700 hover:border-gray-500 transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer group relative"
+              className="text-left bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-4 border border-gray-700 hover:border-gray-500 transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer group relative"
               onMouseEnter={() => setHoveredPokemon(p.id)}
               onMouseLeave={() => setHoveredPokemon(null)}
+              onClick={() => openModalFor(p.id)}
             >
               {p.isLegendary && (
                 <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
@@ -574,6 +512,7 @@ const Home: React.FC = () => {
                 </div>
               )}
               <div className="relative bg-gray-700/50 rounded-xl p-4 mb-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={hoveredPokemon === p.id ? p.animatedImage : p.image}
                   alt={p.name}
@@ -583,9 +522,7 @@ const Home: React.FC = () => {
                   #{p.id.toString().padStart(3, "0")}
                 </div>
               </div>
-              <h3 className="text-white font-bold text-lg capitalize mb-2 text-center">
-                {p.name}
-              </h3>
+              <h3 className="text-white font-bold text-lg capitalize mb-2 text-center">{p.name}</h3>
               <div className="flex gap-2 justify-center flex-wrap">
                 {p.types.map((type) => (
                   <span
@@ -598,7 +535,7 @@ const Home: React.FC = () => {
                   </span>
                 ))}
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
@@ -616,8 +553,7 @@ const Home: React.FC = () => {
               onClick={loadMore}
               className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
-              Load More Pokémon ({filteredPokemon.length - displayCount}{" "}
-              remaining)
+              Load More Pokémon ({filteredPokemon.length - displayCount} remaining)
             </button>
           </div>
         )}
@@ -634,10 +570,10 @@ const Home: React.FC = () => {
         </button>
       )}
 
-      {/* Footer */}
+      {/* Footer (fixed typo: bg-gradient-toS-br → bg-gradient-to-br) */}
       <footer className="mt-12 pb-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-toS-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-8">
+          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-8">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-md">All Rights Reserved</p>
@@ -664,6 +600,13 @@ const Home: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Pokedex Modal */}
+      <PokedexModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        initialPokemonId={modalPokemonId}
+      />
     </div>
   );
 };
