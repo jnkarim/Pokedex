@@ -21,8 +21,10 @@ import { IoWaterOutline } from "react-icons/io5";
 import { AiFillThunderbolt } from "react-icons/ai";
 import { MdDarkMode } from "react-icons/md";
 import { LuSnowflake } from "react-icons/lu";
-import { FaEye, FaSkullCrossbones, FaGithub, FaLinkedin  } from "react-icons/fa";
+import { FaEye, FaSkullCrossbones, FaGithub, FaLinkedin } from "react-icons/fa";
 import { MdCatchingPokemon } from "react-icons/md";
+import { useRouter } from 'next/navigation';
+
 
 interface Pokemon {
   id: number;
@@ -191,7 +193,7 @@ const Home: React.FC = () => {
   const hasMore = displayCount < filteredPokemon.length;
 
   const loadMore = () => {
-    setDisplayCount(prev => prev + 100);
+    setDisplayCount((prev) => prev + 100);
   };
 
   // Reset display count when filters change
@@ -221,7 +223,7 @@ const Home: React.FC = () => {
           className="absolute bottom-0 left-0 w-full"
           viewBox="0 0 1440 100"
           preserveAspectRatio="none"
-          style={{ height: '60px' }}
+          style={{ height: "60px" }}
         >
           <defs>
             <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -287,7 +289,7 @@ const Home: React.FC = () => {
               <img
                 src="/pokedex_logo.png"
                 alt="Pokedex Logo"
-                className="h-14 w-auto object-contain drop-shadow-xl"
+                className="h-16 w-auto object-contain drop-shadow-xl"
               />
             </div>
 
@@ -299,7 +301,7 @@ const Home: React.FC = () => {
               <img
                 src="/pball.png"
                 alt="Pokeball"
-                className="w-14 h-14 object-contain"
+                className="w-16 h-16 object-contain"
               />
             </div>
           </div>
@@ -599,7 +601,7 @@ const Home: React.FC = () => {
             </div>
           ))}
         </div>
-        
+
         {filteredPokemon.length === 0 && (
           <div className="text-center py-20">
             <div className="text-gray-500 text-2xl mb-4">No Pokémon found</div>
@@ -614,7 +616,8 @@ const Home: React.FC = () => {
               onClick={loadMore}
               className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
-              Load More Pokémon ({filteredPokemon.length - displayCount} remaining)
+              Load More Pokémon ({filteredPokemon.length - displayCount}{" "}
+              remaining)
             </button>
           </div>
         )}
@@ -634,11 +637,10 @@ const Home: React.FC = () => {
       {/* Footer */}
       <footer className="mt-12 pb-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-8">
+          <div className="bg-gradient-toS-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-8">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-white text-xl font-bold mb-1">Renato G Santos</h3>
-                <p className="text-gray-400 text-sm">renato.work.art@gmail.com</p>
+                <p className="text-gray-400 text-md">All Rights Reserved</p>
               </div>
               <div className="flex items-center gap-4">
                 <a
