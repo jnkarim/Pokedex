@@ -529,16 +529,15 @@ export default function PokedexModal({
         className="relative mx-auto my-5 h-[92vh] w-[94vw] max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-3 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        {/*Close Button*/}
         <button
           type="button"
           aria-label="Close"
           onClick={(e) => {
-            e.stopPropagation(); 
-            onClose(); 
+            e.stopPropagation();
+            onClose();
           }}
-          className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center
-             rounded-full border border-white/10 bg-black/40 text-white
-             hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/30"
+          className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/30"
         >
           <X size={18} />
         </button>
