@@ -1,6 +1,7 @@
-# Pokedex App
+# Pokédex App
 
-A fully responsive Pokédex built with **Next.js** and **React**. It fetches data from the [PokéAPI](https://pokeapi.co) and displays all Pokémon with filtering, sorting, and modal details. The UI is styled with **Tailwind CSS** and optimized for both desktop and mobile devices.
+A fully responsive retro-style Pokédex web app that gives off nostalgic vibes while being helpful for gamers who want quick Pokémon info. Built with Next.js and React, it fetches data from the PokéAPI
+ and displays all Pokémon with filtering, sorting, and modal details. The UI is styled with Tailwind CSS and optimized for both desktop and mobile devices.
 
 ---
 
