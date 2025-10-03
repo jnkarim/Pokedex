@@ -37,3 +37,11 @@ A fully responsive retro-style Pokédex web app that gives off nostalgic vibes w
 
 
 
+
+
+---
+
+
+## Live Project
+
+- **App:** https://pokedex-eta-kohl.vercel.app/
