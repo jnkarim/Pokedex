@@ -530,17 +530,18 @@ export default function PokedexModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/*Close Button*/}
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/30"
-        >
-          <X size={18} />
-        </button>
+       <button
+  type="button"
+  aria-label="Close"
+  onClick={(e) => {
+    e.stopPropagation();
+    onClose();
+  }}
+  className="absolute right-3 top-3 z-50 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/40 text-white hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/30"
+>
+  <X size={18} />
+</button>
+
 
         <div className="pointer-events-none absolute left-1/2 inset-y-3 w-[3px] -translate-x-1/2 bg-slate-900/85 z-0 rounded-full" />
 

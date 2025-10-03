@@ -263,13 +263,12 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
       {/* Header */}
       <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 relative overflow-hidden">
-        {!isMobile && (
-          <svg
-            className="absolute bottom-0 left-0 w-full"
-            viewBox="0 0 1440 100"
-            preserveAspectRatio="none"
-            style={{ height: "50px" }}
-          >
+ <svg
+  className="absolute bottom-0 left-0 w-full h-8 md:h-[60px]"
+  viewBox="0 0 1440 100"
+  preserveAspectRatio="none"
+>
+
             <defs>
               <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#000000" stopOpacity="0.9" />
@@ -307,7 +306,7 @@ const Home: React.FC = () => {
               />
             </path>
           </svg>
-        )}
+        
         <div className="max-w-7xl mx-auto px-4 py-5">
           <div className="flex items-center justify-between mb-5">
             {/* Left Side - Pokeball Button and Lights */}
@@ -626,7 +625,7 @@ const Home: React.FC = () => {
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-md">gotta catch 'em all!</p>
+                <p className="text-gray-400 text-md">Gotta catch 'em all!</p>
               </div>
               <div className="flex items-center gap-4">
                 <a
@@ -652,11 +651,14 @@ const Home: React.FC = () => {
       </footer>
 
       {/* Pokedex Modal */}
-      <PokedexModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        initialPokemonId={modalPokemonId}
-      />
+   <PokedexModal
+  open={modalOpen}
+  onClose={() => {
+    console.log("onClose called");   // should appear
+    setModalOpen(false);
+  }}
+  initialPokemonId={modalPokemonId}
+/>
     </div>
   );
 };
