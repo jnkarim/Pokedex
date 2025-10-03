@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useMemo, useState } from "react";
 import { Search, X, ArrowUp } from "lucide-react";
 import {
   GiSeaDragon,
@@ -50,6 +51,7 @@ const Home: React.FC = () => {
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [displayCount, setDisplayCount] = useState(100);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -97,7 +99,6 @@ const Home: React.FC = () => {
     fairy: <GiFairyWings size={18} />,
   };
 
-  // ✅ Include Gen IX so IDs up to 1025 are handled
   const generationRanges = [
     { gen: 1, start: 1, end: 151, name: "Generation I" },
     { gen: 2, start: 152, end: 251, name: "Generation II" },
@@ -123,6 +124,25 @@ const Home: React.FC = () => {
     const gen = generationRanges.find((g) => id >= g.start && id <= g.end);
     return gen ? gen.gen : 1;
   };
+
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 640px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      const mobile = 'matches' in e ? e.matches : (e as MediaQueryList).matches;
+      setIsMobile(mobile);
+      setDisplayCount(mobile ? 50 : 100);
+    };
+    // Initial
+    handler(mql);
+    // Listen
+    const listener = (e: MediaQueryListEvent) => handler(e);
+    mql.addEventListener ? mql.addEventListener("change", listener) : mql.addListener(listener as any);
+    return () => {
+      mql.removeEventListener ? mql.removeEventListener("change", listener) : mql.removeListener(listener as any);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -172,71 +192,68 @@ const Home: React.FC = () => {
     };
 
     fetchPokemon();
-  }, []); // initial load
+  }, []); 
 
-  const filteredPokemon = pokemon.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.id.toString().includes(searchTerm);
-    const matchesType = !selectedType || p.types.includes(selectedType);
-    const matchesGeneration = !selectedGeneration || p.generation === selectedGeneration;
-    const matchesLegendary = !showLegendaryOnly || p.isLegendary;
-    return matchesSearch && matchesType && matchesGeneration && matchesLegendary;
-  });
+  const filteredPokemon = useMemo(() => {
+    const st = searchTerm.toLowerCase();
+    return pokemon.filter((p) => {
+      const matchesSearch = p.name.toLowerCase().includes(st) || p.id.toString().includes(st);
+      const matchesType = !selectedType || p.types.includes(selectedType);
+      const matchesGeneration = !selectedGeneration || p.generation === selectedGeneration;
+      const matchesLegendary = !showLegendaryOnly || p.isLegendary;
+      return matchesSearch && matchesType && matchesGeneration && matchesLegendary;
+    });
+  }, [pokemon, searchTerm, selectedType, selectedGeneration, showLegendaryOnly]);
 
   const displayedPokemon = filteredPokemon.slice(0, displayCount);
   const hasMore = displayCount < filteredPokemon.length;
 
-  const loadMore = () => setDisplayCount((prev) => prev + 100);
+  const loadMore = () => setDisplayCount((prev) => prev + (isMobile ? 50 : 100));
 
-  // Reset display count when filters change
+  // Reset display count when filters change (keep mobile 24 rule)
   useEffect(() => {
-    setDisplayCount(100);
-  }, [searchTerm, selectedType, selectedGeneration, showLegendaryOnly]);
+    setDisplayCount(isMobile ? 24 : 100);
+  }, [searchTerm, selectedType, selectedGeneration, showLegendaryOnly, isMobile]);
 
- if (loading) {
-      return (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+  if (loading) {
+    return (
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center">
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-          {/* Loader Box */}
-          <div className="relative z-10 w-[420px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-4 border-green-500/40 rounded-2xl shadow-2xl p-8 flex flex-col items-center">
-            {/* Animated Pokéball */}
+        {/* Loader Box */}
+        <div className="relative z-10 w-[420px] max-w-[90vw] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-4 border-green-500/40 rounded-2xl shadow-2xl p-8 flex flex-col items-center">
+          {/* Animated Pokéball */}
+          {!isMobile && (
             <div className="relative mb-6">
               <div className="w-24 h-24 border-[10px] border-red-500 border-t-transparent rounded-full animate-spin"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/pball.png" alt="Pokéball" className="w-12 h-12 animate-pulse" />
               </div>
             </div>
+          )}
 
-            {/* Text */}
-            <div className="text-center">
-              <h2 className="text-green-400 font-mono text-xl animate-pulse tracking-wider">Loading Pokédex…</h2>
-            </div>
-
-            {/* Pixel style bar */}
-            <div className="mt-6 w-full bg-slate-700 border border-slate-600 rounded-full h-3 overflow-hidden">
-              <div className="h-full bg-green-400 animate-[loadingbar_2s_linear_infinite]" />
-            </div>
+          {/* Text */}
+          <div className="text-center">
+            <h2 className="text-green-400 font-mono text-xl animate-pulse tracking-wider">Loading Pokédex…</h2>
           </div>
 
-          <style jsx>{`
-            @keyframes loadingbar {
-              0% {
-                transform: translateX(-100%);
-              }
-              100% {
-                transform: translateX(100%);
-              }
-            }
-          `}</style>
+          {/* Pixel style bar */}
+          <div className="mt-6 w-full bg-slate-700 border border-slate-600 rounded-full h-3 overflow-hidden">
+            <div className="h-full bg-green-400 animate-[loadingbar_2s_linear_infinite]" />
+          </div>
         </div>
-      );
-    }
 
-  // Helper to open modal with selected Pokémon ID
+        <style jsx>{`
+          @keyframes loadingbar {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   const openModalFor = (id: number) => {
     setModalPokemonId(id);
     setModalOpen(true);
@@ -246,70 +263,73 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
       {/* Header */}
       <div className="bg-red-700 relative overflow-hidden">
-        {/* Wavy bottom border with animation */}
-        <svg
-          className="absolute bottom-0 left-0 w-full"
-          viewBox="0 0 1440 100"
-          preserveAspectRatio="none"
-          style={{ height: "60px" }}
-        >
-          <defs>
-            <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#000000" stopOpacity="0.9" />
-              <stop offset="50%" stopColor="#1a1a1a" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#000000" stopOpacity="0.9" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0,20 C240,90 480,20 720,50 C960,80 1200,20 1440,90 L1440,100 L0,100 Z"
-            fill="url(#waveGradient)"
+        {!isMobile && (
+          <svg
+            className="absolute bottom-0 left-0 w-full"
+            viewBox="0 0 1440 100"
+            preserveAspectRatio="none"
+            style={{ height: "60px" }}
           >
-            <animate
-              attributeName="d"
-              dur="8s"
-              repeatCount="indefinite"
-              values="
-                M0,50 C240,80 480,20 720,50 C960,80 1200,20 1440,50 L1440,100 L0,100 Z;
-                M0,50 C240,20 480,80 720,50 C960,20 1200,80 1440,50 L1440,100 L0,100 Z;
-                M0,50 C240,80 480,20 720,50 C960,80 1200,20 1440,50 L1440,100 L0,100 Z"
-            />
-          </path>
-          <path
-            d="M0,60 C240,90 480,30 720,60 C960,90 1200,30 1440,60 L1440,100 L0,100 Z"
-            fill="#000000"
-            opacity="0.5"
-          >
-            <animate
-              attributeName="d"
-              dur="10s"
-              repeatCount="indefinite"
-              values="
-                M0,60 C240,90 480,30 720,60 C960,90 1200,30 1440,60 L1440,100 L0,100 Z;
-                M0,60 C240,30 480,90 720,60 C960,30 1200,90 1440,60 L1440,100 L0,100 Z;
-                M0,60 C240,90 480,30 720,60 C960,90 1200,30 1440,60 L1440,100 L0,100 Z"
-            />
-          </path>
-        </svg>
+            <defs>
+              <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#000000" stopOpacity="0.9" />
+                <stop offset="50%" stopColor="#1a1a1a" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#000000" stopOpacity="0.9" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M0,20 C240,90 480,20 720,50 C960,80 1200,20 1440,90 L1440,100 L0,100 Z"
+              fill="url(#waveGradient)"
+            >
+              <animate
+                attributeName="d"
+                dur="8s"
+                repeatCount="indefinite"
+                values="
+                  M0,50 C240,80 480,20 720,50 C960,80 1200,20 1440,50 L1440,100 L0,100 Z;
+                  M0,50 C240,20 480,80 720,50 C960,20 1200,80 1440,50 L1440,100 L0,100 Z;
+                  M0,50 C240,80 480,20 720,50 C960,80 1200,20 1440,50 L1440,100 L0,100 Z"
+              />
+            </path>
+            <path
+              d="M0,60 C240,90 480,30 720,60 C960,90 1200,30 1440,60 L1440,100 L0,100 Z"
+              fill="#000000"
+              opacity="0.5"
+            >
+              <animate
+                attributeName="d"
+                dur="10s"
+                repeatCount="indefinite"
+                values="
+                  M0,60 C240,90 480,30 720,60 C960,90 1200,30 1440,60 L1440,100 L0,100 Z;
+                  M0,60 C240,30 480,90 720,60 C960,30 1200,90 1440,60 L1440,100 L0,100 Z;
+                  M0,60 C240,90 480,30 720,60 C960,90 1200,30 1440,60 L1440,100 L0,100 Z"
+              />
+            </path>
+          </svg>
+        )}
         <div className="max-w-7xl mx-auto px-4 py-5">
           <div className="flex items-center justify-between mb-5">
             {/* Left Side - Pokeball Button and Lights */}
-            <div className="flex items-center gap-3">
+            <div className="flex gap-3">
               <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full border-3 border-white shadow-xl flex items-center justify-center relative flex-shrink-0 hover:scale-110 transition-transform cursor-pointer">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-800 rounded-full"></div>
-                <div className="absolute w-3.5 h-3.5 bg-white rounded-full opacity-80 transform -translate-x-2 -translate-y-2"></div>
+                {!isMobile && <div className="absolute w-3.5 h-3.5 bg-white rounded-full opacity-80 transform -translate-x-2 -translate-y-2"></div>}
               </div>
 
-              <div className="flex gap-2 items-center">
-                <div className="w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
-                <div
-                  className="w-3.5 h-3.5 bg-yellow-400 rounded-full border-2 border-white shadow-lg animate-pulse"
-                  style={{ animationDelay: "0.2s" }}
-                ></div>
-                <div
-                  className="w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white shadow-lg animate-pulse"
-                  style={{ animationDelay: "0.4s" }}
-                ></div>
-              </div>
+              {!isMobile && (
+                <div className="flex gap-2 py-2">
+                  <div className="w-3.5 h-3.5 bg-red-700 rounded-full border-2 border-white shadow-lg animate-pulse"></div>
+                  <div
+                    className="w-3.5 h-3.5 bg-yellow-500 rounded-full border-2 border-white shadow-lg animate-pulse"
+                    style={{ animationDelay: "0.2s" }}
+                  ></div>
+                  <div
+                    className="w-3.5 h-3.5 bg-green-700 rounded-full border-2 border-white shadow-lg animate-pulse"
+                    style={{ animationDelay: "0.4s" }}
+                  ></div>
+                </div>
+              )}
             </div>
 
             {/* Center - Logo */}
@@ -322,9 +342,11 @@ const Home: React.FC = () => {
             </div>
 
             {/* Right Side - Pokeball */}
-            <div className="animate-spin flex-shrink-0" style={{ animationDuration: "20s" }}>
-              <img src="/pball.png" alt="Pokeball" className="w-16 h-16 object-contain" />
-            </div>
+            {!isMobile && (
+              <div className="animate-spin flex-shrink-0" style={{ animationDuration: "20s" }}>
+                <img src="/pball.png" alt="Pokeball" className="w-16 h-16 object-contain" />
+              </div>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -388,13 +410,13 @@ const Home: React.FC = () => {
       {/* Sorting */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="mb-6">
-          <h2 className="text-white text-3xl font-bold mb-2">Pokémons</h2>
+          <h2 className="text-white text-3xl font-bold mb-2">Find Pokémons</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Game Generation Dropdown */}
           <div className="relative">
-            <h3 className="text-red-500 font-bold mb-3 text-lg">Game Generation</h3>
+            <h3 className="text-yellow-500 font-bold mb-3 text-lg">Game Generation</h3>
             <button
               onClick={() => {
                 setShowGenDropdown(!showGenDropdown);
@@ -467,7 +489,7 @@ const Home: React.FC = () => {
 
           {/* Sort Pokemon Dropdown */}
           <div className="relative">
-            <h3 className="text-blue-500 font-bold mb-3 text-lg">Sort Pokémon</h3>
+            <h3 className="text-yellow-500 font-bold mb-3 text-lg">Sort Pokémon</h3>
             <button
               onClick={() => {
                 setShowSortDropdown(!showSortDropdown);
@@ -507,7 +529,7 @@ const Home: React.FC = () => {
                     showLegendaryOnly ? "bg-gray-700 text-white" : "text-gray-300"
                   }`}
                 >
-                  <MdCatchingPokemon size={16} />
+                  <MdCatchingPokemon size={16} className="bg-red-500" />
                   Legendary
                 </button>
               </div>
@@ -541,9 +563,8 @@ const Home: React.FC = () => {
                 </div>
               )}
               <div className="relative bg-gray-700/50 rounded-xl p-4 mb-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={hoveredPokemon === p.id ? p.animatedImage : p.image}
+                  src={hoveredPokemon === p.id && !isMobile ? p.animatedImage : p.image}
                   alt={p.name}
                   className="w-full h-32 object-contain group-hover:scale-110 transition-transform duration-300"
                 />
@@ -599,13 +620,13 @@ const Home: React.FC = () => {
         </button>
       )}
 
-      {/* Footer (fixed typo: bg-gradient-toS-br → bg-gradient-to-br) */}
+      {/* Footer */}
       <footer className="mt-12 pb-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-md">All Rights Reserved</p>
+                <p className="text-gray-400 text-md">© 2025 Pokédex. All rights reserved.</p>
               </div>
               <div className="flex items-center gap-4">
                 <a
