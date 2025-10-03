@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 interface PokemonDetails {
   id: number;
@@ -22,6 +22,7 @@ interface PokemonDetails {
   description: string;
   evolutionChain: EvolutionNode | null;
 }
+
 interface EvolutionNode {
   id: number;
   name: string;
@@ -72,6 +73,27 @@ const getGenerationLabel = (id: number) =>
   generationRanges.find((g) => id >= g.start && id <= g.end)?.name ??
   "Generation I";
 
+/** ---------- Simple male-voice speech using Web Speech API ---------- */
+function speakFallback(text: string) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  const voices = window.speechSynthesis.getVoices();
+  const v =
+    voices.find(
+      (vv) =>
+        vv.lang?.toLowerCase().startsWith("en") &&
+        /male|baritone|david|george|alex/i.test(vv.name)
+    ) ||
+    voices.find((vv) => vv.lang?.toLowerCase().startsWith("en")) ||
+    voices[0];
+  if (v) u.voice = v;
+  u.rate = 0.9;
+  u.pitch = 1.05;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+/** ------------------------------------------------------------------- */
+
 export default function PokedexModal({
   open,
   onClose,
@@ -89,12 +111,12 @@ export default function PokedexModal({
   );
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset to initial id whenever modal is (re)opened
+  // Reset when opened
   useEffect(() => {
     if (open) setPokemonId(initialPokemonId);
   }, [open, initialPokemonId]);
 
-  // Close on ESC
+  // ESC & arrows
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!open) return;
@@ -107,6 +129,7 @@ export default function PokedexModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // Parse evolution helper
   const parseEvolutionChain = async (chain: any): Promise<EvolutionNode> => {
     const getPokemonId = (url: string) => {
       const parts = url.split("/");
@@ -148,8 +171,9 @@ export default function PokedexModal({
     return parseNode(chain);
   };
 
+  // Fetch Pokémon details
   useEffect(() => {
-    if (!open) return; // don't fetch if modal is closed
+    if (!open) return;
 
     const fetchPokemonDetails = async () => {
       try {
@@ -207,6 +231,7 @@ export default function PokedexModal({
         setLoading(false);
       }
     };
+
     fetchPokemonDetails();
   }, [pokemonId, open]);
 
@@ -266,6 +291,7 @@ export default function PokedexModal({
       </div>
     );
   };
+
   const content = useMemo(() => {
     if (loading) {
       return (
@@ -278,31 +304,24 @@ export default function PokedexModal({
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
           {/* Loader Box */}
-          <div className="relative z-10 w-[420px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-4 border-green-500/40 rounded-2xl shadow-2xl p-8 flex flex-col items-center">
-            {/* Animated Pokéball */}
-            <div className="relative mb-6">
-              <div className="w-24 h-24 border-[10px] border-red-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="relative z-10 w-[380px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-4 border-green-500/40 rounded-2xl shadow-2xl p-6 flex flex-col items-center">
+            <div className="relative mb-5">
+              <div className="w-20 h-20 border-[10px] border-red-500 border-t-transparent rounded-full animate-spin"></div>
               <div className="absolute inset-0 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/pball.png"
                   alt="Pokéball"
-                  className="w-12 h-12 animate-pulse"
+                  className="w-10 h-10 animate-pulse"
                 />
               </div>
             </div>
-
-            {/* Text */}
             <div className="text-center">
-              <h2 className="text-green-400 font-mono text-xl animate-pulse tracking-wider">
+              <h2 className="text-green-400 font-mono text-lg animate-pulse tracking-wider">
                 Loading Pokédex…
               </h2>
-              <p className="text-green-500 text-xs mt-2 font-mono opacity-70">
-                Please wait while data is retrieved
-              </p>
             </div>
-
-            {/* Pixel style bar */}
-            <div className="mt-6 w-full bg-slate-700 border border-slate-600 rounded-full h-3 overflow-hidden">
+            <div className="mt-5 w-full bg-slate-700 border border-slate-600 rounded-full h-3 overflow-hidden">
               <div className="h-full bg-green-400 animate-[loadingbar_2s_linear_infinite]" />
             </div>
           </div>
@@ -323,7 +342,7 @@ export default function PokedexModal({
 
     if (!pokemon) {
       return (
-        <div className="min-h-[60vh] flex items-center justify-center p-12">
+        <div className="min-h-[60vh] flex items-center justify-center p-10">
           <div className="text-white text-center">
             <h1 className="text-2xl font-bold">Pokémon Not Found</h1>
           </div>
@@ -332,44 +351,38 @@ export default function PokedexModal({
     }
 
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* LEFT */}
-        <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-3xl shadow-2xl border-8 border-red-950 p-6 relative">
+        <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-3xl shadow-2xl border-6 border-red-950 p-4 relative">
           <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-2xl p-1 shadow-2xl border-4 border-slate-900">
-            <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-xl p-4 ">
+            <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-xl p-3">
               <div className="flex items-center justify-between mb-2 px-2">
-                {/*blue lens*/}
+                {/* blue lens */}
                 <div className="flex gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full border-3 border-white shadow-xl flex items-center justify-center relative flex-shrink-0 hover:scale-110 transition-transform cursor-pointer">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-800 rounded-full"></div>
-                    <div className="absolute w-3.5 h-3.5 bg-white rounded-full opacity-80 transform -translate-x-2 -translate-y-2"></div>
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full border-3 border-white shadow-xl flex items-center justify-center relative flex-shrink-0 hover:scale-110 transition-transform cursor-pointer">
+                    <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-800 rounded-full"></div>
+                    <div className="absolute w-3 h-3 bg-white rounded-full opacity-80 transform -translate-x-2 -translate-y-2"></div>
                   </div>
 
                   <div className="flex gap-2 items-start">
                     <div className="w-3.5 h-3.5 bg-red-800 rounded-full shadow-lg"></div>
-                    <div
-                      className="w-3.5 h-3.5 bg-yellow-600 rounded-full shadow-lg"
-                      style={{ animationDelay: "0.2s" }}
-                    ></div>
-                    <div
-                      className="w-3.5 h-3.5 bg-green-800 rounded-full shadow-lg"
-                      style={{ animationDelay: "0.4s" }}
-                    ></div>
+                    <div className="w-3.5 h-3.5 bg-yellow-600 rounded-full shadow-lg"></div>
+                    <div className="w-3.5 h-3.5 bg-green-800 rounded-full shadow-lg"></div>
                   </div>
                 </div>
               </div>
 
-              <div className="relative bg-black rounded-md p-4 mb-8 h-72 flex items-center justify-center border-24 border-[#E9E4D7] shadow-inner overflow-visible">
+              <div className="relative bg-black rounded-md p-3 mb-6 h-64 flex items-center justify-center border-[22px] border-[#E9E4D7] shadow-inner overflow-visible">
                 {/* Two straight lines in column at red circle position */}
-                <div className="absolute -bottom-5 left-80 flex flex-col gap-1 z-20">
+                <div className="absolute -bottom-4 left-62 flex flex-col gap-1 z-20">
                   <div className="w-8 h-1 bg-[#E9E4D7] border border-black"></div>
-                  <div className="w-8 h-1 bg-slate-[#E9E4D7] border border-black"></div>
+                  <div className="w-8 h-1 bg-[#E9E4D7] border border-black"></div>
                 </div>
 
                 {/* Red circle positioned between the border and black frame */}
-                <div className="absolute -bottom-5 left-2 w-4 h-4 bg-red-700 rounded-full shadow-lg z-20"></div>
+                <div className="absolute -bottom-4.5 left-2 w-4 h-4 bg-red-700 rounded-full shadow-lg z-20"></div>
 
-                {/* Animated Pokémon */}
+
                 <img
                   src={pokemon.image}
                   alt={pokemon.name}
@@ -377,6 +390,7 @@ export default function PokedexModal({
                   key={pokemon.id}
                 />
               </div>
+
               <div className="bg-black rounded-lg p-3 mb-2 border-2 shadow-lg">
                 <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-bold capitalize text-white tracking-wide">
@@ -392,7 +406,7 @@ export default function PokedexModal({
                 {pokemon.types.map((type) => (
                   <span
                     key={type}
-                    className="px-4 py-2 rounded-lg text-[#E9E4D7] font-bold capitalize text-sm shadow-md border-2 border-black/20"
+                    className="px-3 py-1.5 rounded-lg text-[#E9E4D7] font-bold capitalize text-sm shadow-md border-2 border-black/20"
                     style={{ backgroundColor: typeColors[type] }}
                   >
                     {type}
@@ -402,24 +416,32 @@ export default function PokedexModal({
             </div>
           </div>
 
-          <div className="mt-6 space-y-4">
-            {/*Plus Sign*/}
-            <div className="flex justify-between items-center px-12">
-              <div className="w-10 h-10 bg-slate-900 rounded-full shadow-lg"></div>
+          <div className="mt-5 space-y-4">
+            {/* Controls row */}
+            <div className="flex justify-between items-center px-10">
+              <div className="w-8 h-8 bg-slate-900 rounded-full shadow-lg"></div>
               <div className="flex gap-2">
-                <div className="w-20 h-10 bg-green-800 border-2 border-black"></div>
+                <button
+                  onClick={() => {
+                    if (pokemon) speakFallback(pokemon.name);
+                  }}
+                  className="w-20 h-10 bg-green-800 border-2 border-black text-[#E9E4D7] font-bold text-xs rounded hover:bg-green-700 transition"
+                >
+                  SPEAK
+                </button>
               </div>
-              <div className="relative w-16 h-16">
-                <div className="absolute w-5 h-16 bg-slate-900 left-1/2 -translate-x-1/2"></div>
-                <div className="absolute w-16 h-5 bg-slate-900 top-1/2 -translate-y-1/2"></div>
+
+              <div className="relative w-14 h-14">
+                <div className="absolute w-4 h-14 bg-slate-900 left-1/2 -translate-x-1/2"></div>
+                <div className="absolute w-14 h-4 bg-slate-900 top-1/2 -translate-y-1/2"></div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pb-3">
+            <div className="grid grid-cols-2 gap-3 pb-2">
               <button
                 onClick={() => setPokemonId((id) => Math.max(1, id - 1))}
                 disabled={pokemonId === 1}
-                className="bg-slate-900 hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-[#E9E4D7] font-bold py-3 rounded-lg shadow-lg transition-all border-3 border-black"
+                className="bg-slate-900 hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-[#E9E4D7] font-bold py-2.5 rounded-lg shadow-lg transition-all border-[3px] border-black"
               >
                 ← PREV
               </button>
@@ -428,13 +450,13 @@ export default function PokedexModal({
                   setPokemonId((id) => Math.min(NATIONAL_DEX_TOTAL, id + 1))
                 }
                 disabled={pokemonId === NATIONAL_DEX_TOTAL}
-                className="bg-slate-900 hover:bg-slate-800 text-[#E9E4D7] font-bold py-3 rounded-lg shadow-lg transition-all border-3 border-black"
+                className="bg-slate-900 hover:bg-slate-800 text-[#E9E4D7] font-bold py-2.5 rounded-lg shadow-lg transition-all border-[3px] border-black"
               >
                 NEXT →
               </button>
             </div>
 
-            <div className="grid grid-cols-6 gap-1 px-8 py-2">
+            <div className="grid grid-cols-6 gap-1 px-6 py-2">
               {Array.from({ length: 24 }).map((_, i) => (
                 <div key={i} className="h-1 bg-red-950 rounded-full"></div>
               ))}
@@ -443,7 +465,7 @@ export default function PokedexModal({
         </div>
 
         {/* RIGHT */}
-        <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-3xl shadow-2xl border-8 border-slate-950 p-6">
+        <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-3xl shadow-2xl border-6 border-slate-950 p-4">
           <RightPane
             pokemon={pokemon}
             activeTab={activeTab}
@@ -452,7 +474,7 @@ export default function PokedexModal({
           />
 
           {/* Bottom Controls */}
-          <div className="space-y-4 mt-6">
+          <div className="space-y-4 mt-5">
             <div className="bg-slate-900 rounded-lg p-3 border-4 border-black shadow-xl">
               <div className="bg-slate-950 rounded p-2 border-2 border-slate-900 h-20 flex items-center justify-center">
                 <div className="text-[#E9E4D7] font-mono text-xs text-center">
@@ -467,8 +489,8 @@ export default function PokedexModal({
             </div>
 
             <div className="flex gap-3 justify-center">
-              <div className="w-14 h-8 bg-[#E9E4D7] border border-2 border-black shadow-xl"></div>
-              <div className="w-14 h-8 bg-[#E9E4D7] border border-2 border-black shadow-xl"></div>
+              <div className="w-12 h-8 bg-[#E9E4D7] border-2 border-black shadow-xl"></div>
+              <div className="w-12 h-8 bg-[#E9E4D7] border-2 border-black shadow-xl"></div>
             </div>
           </div>
         </div>
@@ -491,24 +513,14 @@ export default function PokedexModal({
       {/* Dialog */}
       <div
         ref={dialogRef}
-        className="relative mx-auto my-6 h-[92vh] w-[94vw] max-w-6xl overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-3 shadow-2xl"
+        className="relative mx-auto my-6 h-[92vh] w-[94vw] max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-3 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
-        <button
-          aria-label="Close"
-          
-          onClick={onClose}
-          className="absolute right-6 top-3 inline-flex items-center justify-center rounded-full border border-white/10 bg-black/40 p-2 text-white hover:bg-black/60"
-        >
-          <X size={18} />
-        </button>
 
-        <div className="relative h-full w-full overflow-auto">
-          {/* center divider bar like original */}
-          <div className="pointer-events-none absolute left-1/2 top-0 bottom-0 w-3 -translate-x-1/2 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-2xl" />
+        <div className="pointer-events-none absolute left-1/2 inset-y-3 w-[3px] -translate-x-1/2 bg-slate-900/85 z-0 rounded-full" />
 
-          <div className="w-full py-6 px-2 md:px-4">{content}</div>
+        <div className="relative h-full w-full overflow-auto z-10">
+          <div className="w-full py-5 px-2 md:px-4">{content}</div>
         </div>
       </div>
 
