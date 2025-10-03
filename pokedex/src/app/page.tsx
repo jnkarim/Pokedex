@@ -626,7 +626,7 @@ const Home: React.FC = () => {
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-md">Gotta catch 'em all!</p>
+                <p className="text-gray-400 text-md">gotta catch 'em all!</p>
               </div>
               <div className="flex items-center gap-4">
                 <a
