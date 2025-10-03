@@ -262,7 +262,7 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
       {/* Header */}
-      <div className="bg-red-700 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-red-600 via-red-700 to-red-800 relative overflow-hidden">
         {!isMobile && (
           <svg
             className="absolute bottom-0 left-0 w-full"
@@ -626,7 +626,7 @@ const Home: React.FC = () => {
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-3xl border border-gray-700/50 p-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-md">© 2025 Pokédex. All rights reserved.</p>
+                <p className="text-gray-400 text-md">Gotta catch 'em all!</p>
               </div>
               <div className="flex items-center gap-4">
                 <a
