@@ -194,18 +194,47 @@ const Home: React.FC = () => {
     setDisplayCount(100);
   }, [searchTerm, selectedType, selectedGeneration, showLegendaryOnly]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-500 to-red-600">
-        <div className="text-center">
-          <div className="w-20 h-20 border-8 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-white text-2xl sm:text-4xl font-bold animate-pulse px-4">
-            Loading Pokédex...
+ if (loading) {
+      return (
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[100] flex items-center justify-center">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+          {/* Loader Box */}
+          <div className="relative z-10 w-[420px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-4 border-green-500/40 rounded-2xl shadow-2xl p-8 flex flex-col items-center">
+            {/* Animated Pokéball */}
+            <div className="relative mb-6">
+              <div className="w-24 h-24 border-[10px] border-red-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/pball.png" alt="Pokéball" className="w-12 h-12 animate-pulse" />
+              </div>
+            </div>
+
+            {/* Text */}
+            <div className="text-center">
+              <h2 className="text-green-400 font-mono text-xl animate-pulse tracking-wider">Loading Pokédex…</h2>
+            </div>
+
+            {/* Pixel style bar */}
+            <div className="mt-6 w-full bg-slate-700 border border-slate-600 rounded-full h-3 overflow-hidden">
+              <div className="h-full bg-green-400 animate-[loadingbar_2s_linear_infinite]" />
+            </div>
           </div>
+
+          <style jsx>{`
+            @keyframes loadingbar {
+              0% {
+                transform: translateX(-100%);
+              }
+              100% {
+                transform: translateX(100%);
+              }
+            }
+          `}</style>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
   // Helper to open modal with selected Pokémon ID
   const openModalFor = (id: number) => {
