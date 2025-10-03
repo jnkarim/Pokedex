@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { X } from "lucide-react";
 
 interface PokemonDetails {
   id: number;
@@ -73,7 +74,6 @@ const getGenerationLabel = (id: number) =>
   generationRanges.find((g) => id >= g.start && id <= g.end)?.name ??
   "Generation I";
 
-
 function speakFallback(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   const u = new SpeechSynthesisUtterance(text);
@@ -92,7 +92,6 @@ function speakFallback(text: string) {
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(u);
 }
-
 
 export default function PokedexModal({
   open,
@@ -171,81 +170,86 @@ export default function PokedexModal({
     return parseNode(chain);
   };
 
- // Fetch Pokémon details
-useEffect(() => {
-  if (!open) return;
+  // Fetch Pokémon details
+  useEffect(() => {
+    if (!open) return;
 
-  let alive = true;                       
-  const idAtRequest = pokemonId;        
-  const controller = new AbortController();
+    let alive = true;
+    const idAtRequest = pokemonId;
+    const controller = new AbortController();
 
-  (async () => {
-    try {
-      setActiveTab("info");
-      setPokemon(null);                  
-      setLoading(true);                   
-      const response = await fetch(
-        `https://pokeapi.co/api/v2/pokemon/${idAtRequest}`,
-        { signal: controller.signal }
-      );
-      if (!response.ok) throw new Error("Pokemon not found");
-      const data = await response.json();
+    (async () => {
+      try {
+        setActiveTab("info");
+        setPokemon(null);
+        setLoading(true);
+        const response = await fetch(
+          `https://pokeapi.co/api/v2/pokemon/${idAtRequest}`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) throw new Error("Pokemon not found");
+        const data = await response.json();
 
-      const speciesResponse = await fetch(data.species.url, { signal: controller.signal });
-      const speciesData = await speciesResponse.json();
+        const speciesResponse = await fetch(data.species.url, {
+          signal: controller.signal,
+        });
+        const speciesData = await speciesResponse.json();
 
-      const description =
-        speciesData.flavor_text_entries
-          .find((entry: any) => entry.language.name === "en")
-          ?.flavor_text.replace(/\f/g, " ") || "No description available.";
+        const description =
+          speciesData.flavor_text_entries
+            .find((entry: any) => entry.language.name === "en")
+            ?.flavor_text.replace(/\f/g, " ") || "No description available.";
 
-      let evolutionChain = null;
-      if (speciesData.evolution_chain) {
-        const evolutionResponse = await fetch(speciesData.evolution_chain.url, { signal: controller.signal });
-        const evolutionData = await evolutionResponse.json();
-        evolutionChain = await parseEvolutionChain(evolutionData.chain);
+        let evolutionChain = null;
+        if (speciesData.evolution_chain) {
+          const evolutionResponse = await fetch(
+            speciesData.evolution_chain.url,
+            { signal: controller.signal }
+          );
+          const evolutionData = await evolutionResponse.json();
+          evolutionChain = await parseEvolutionChain(evolutionData.chain);
+        }
+
+        const details: PokemonDetails = {
+          id: data.id,
+          name: data.name,
+          types: data.types.map((t: any) => t.type.name),
+          image: data.sprites.other["official-artwork"].front_default,
+          height: data.height,
+          weight: data.weight,
+          stats: {
+            hp: data.stats[0].base_stat,
+            attack: data.stats[1].base_stat,
+            defense: data.stats[2].base_stat,
+            specialAttack: data.stats[3].base_stat,
+            specialDefense: data.stats[4].base_stat,
+            speed: data.stats[5].base_stat,
+          },
+          abilities: data.abilities.map((a: any) => a.ability.name),
+          moves: data.moves.slice(0, 10).map((m: any) => m.move.name),
+          description,
+          evolutionChain,
+        };
+
+        // Ignore stale results
+        if (!alive || idAtRequest !== pokemonId) return;
+
+        setPokemon(details);
+      } catch (e: any) {
+        if (e?.name === "AbortError") return;
+        console.error("Error fetching Pokemon details:", e);
+        if (alive) setPokemon(null);
+      } finally {
+        if (alive) setLoading(false);
       }
+    })();
 
-      const details: PokemonDetails = {
-        id: data.id,
-        name: data.name,
-        types: data.types.map((t: any) => t.type.name),
-        image: data.sprites.other["official-artwork"].front_default,
-        height: data.height,
-        weight: data.weight,
-        stats: {
-          hp: data.stats[0].base_stat,
-          attack: data.stats[1].base_stat,
-          defense: data.stats[2].base_stat,
-          specialAttack: data.stats[3].base_stat,
-          specialDefense: data.stats[4].base_stat,
-          speed: data.stats[5].base_stat,
-        },
-        abilities: data.abilities.map((a: any) => a.ability.name),
-        moves: data.moves.slice(0, 10).map((m: any) => m.move.name),
-        description,
-        evolutionChain,
-      };
-
-      // Ignore stale results 
-      if (!alive || idAtRequest !== pokemonId) return;
-
-      setPokemon(details);
-    } catch (e: any) {
-      if (e?.name === "AbortError") return; 
-      console.error("Error fetching Pokemon details:", e);
-      if (alive) setPokemon(null);
-    } finally {
-      if (alive) setLoading(false);
-    }
-  })();
-
-  // cleanup cancels the in-flight fetch when id changes or modal closes
-  return () => {
-    alive = false;
-    controller.abort();
-  };
-}, [pokemonId, open]);
+    // cleanup cancels the in-flight fetch when id changes or modal closes
+    return () => {
+      alive = false;
+      controller.abort();
+    };
+  }, [pokemonId, open]);
 
   const renderEvolutionChain = (node: EvolutionNode) => {
     return (
@@ -392,7 +396,6 @@ useEffect(() => {
                 {/* Red circle positioned between the border and black frame */}
                 <div className="absolute -bottom-4.5 left-2 w-4 h-4 bg-red-700 rounded-full shadow-lg z-20"></div>
 
-
                 <img
                   src={pokemon.image}
                   alt={pokemon.name}
@@ -437,7 +440,7 @@ useEffect(() => {
                   }}
                   className="w-20 h-10 bg-green-800 border-2 border-black text-[#E9E4D7] font-bold text-xs rounded hover:bg-green-700 transition"
                 >
-                  SPEAK
+                  Voice
                 </button>
               </div>
 
@@ -523,9 +526,22 @@ useEffect(() => {
       {/* Dialog */}
       <div
         ref={dialogRef}
-        className="relative mx-auto my-6 h-[92vh] w-[94vw] max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-3 shadow-2xl"
+        className="relative mx-auto my-5 h-[92vh] w-[94vw] max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-3 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={(e) => {
+            e.stopPropagation(); 
+            onClose(); 
+          }}
+          className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center
+             rounded-full border border-white/10 bg-black/40 text-white
+             hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white/30"
+        >
+          <X size={18} />
+        </button>
 
         <div className="pointer-events-none absolute left-1/2 inset-y-3 w-[3px] -translate-x-1/2 bg-slate-900/85 z-0 rounded-full" />
 

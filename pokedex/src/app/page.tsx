@@ -268,7 +268,7 @@ const Home: React.FC = () => {
             className="absolute bottom-0 left-0 w-full"
             viewBox="0 0 1440 100"
             preserveAspectRatio="none"
-            style={{ height: "60px" }}
+            style={{ height: "50px" }}
           >
             <defs>
               <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
