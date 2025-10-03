@@ -73,7 +73,7 @@ const getGenerationLabel = (id: number) =>
   generationRanges.find((g) => id >= g.start && id <= g.end)?.name ??
   "Generation I";
 
-/** ---------- Simple male-voice speech using Web Speech API ---------- */
+
 function speakFallback(text: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   const u = new SpeechSynthesisUtterance(text);
@@ -92,7 +92,7 @@ function speakFallback(text: string) {
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(u);
 }
-/** ------------------------------------------------------------------- */
+
 
 export default function PokedexModal({
   open,
@@ -171,69 +171,81 @@ export default function PokedexModal({
     return parseNode(chain);
   };
 
-  // Fetch Pokémon details
-  useEffect(() => {
-    if (!open) return;
+ // Fetch Pokémon details
+useEffect(() => {
+  if (!open) return;
 
-    const fetchPokemonDetails = async () => {
-      try {
-        setLoading(true);
-        setActiveTab("info");
+  let alive = true;                       
+  const idAtRequest = pokemonId;        
+  const controller = new AbortController();
 
-        const response = await fetch(
-          `https://pokeapi.co/api/v2/pokemon/${pokemonId}`
-        );
-        if (!response.ok) throw new Error("Pokemon not found");
-        const data = await response.json();
+  (async () => {
+    try {
+      setActiveTab("info");
+      setPokemon(null);                  
+      setLoading(true);                   
+      const response = await fetch(
+        `https://pokeapi.co/api/v2/pokemon/${idAtRequest}`,
+        { signal: controller.signal }
+      );
+      if (!response.ok) throw new Error("Pokemon not found");
+      const data = await response.json();
 
-        const speciesResponse = await fetch(data.species.url);
-        const speciesData = await speciesResponse.json();
+      const speciesResponse = await fetch(data.species.url, { signal: controller.signal });
+      const speciesData = await speciesResponse.json();
 
-        const description =
-          speciesData.flavor_text_entries
-            .find((entry: any) => entry.language.name === "en")
-            ?.flavor_text.replace(/\f/g, " ") || "No description available.";
+      const description =
+        speciesData.flavor_text_entries
+          .find((entry: any) => entry.language.name === "en")
+          ?.flavor_text.replace(/\f/g, " ") || "No description available.";
 
-        let evolutionChain = null;
-        if (speciesData.evolution_chain) {
-          const evolutionResponse = await fetch(
-            speciesData.evolution_chain.url
-          );
-          const evolutionData = await evolutionResponse.json();
-          evolutionChain = await parseEvolutionChain(evolutionData.chain);
-        }
-
-        const details: PokemonDetails = {
-          id: data.id,
-          name: data.name,
-          types: data.types.map((t: any) => t.type.name),
-          image: data.sprites.other["official-artwork"].front_default,
-          height: data.height,
-          weight: data.weight,
-          stats: {
-            hp: data.stats[0].base_stat,
-            attack: data.stats[1].base_stat,
-            defense: data.stats[2].base_stat,
-            specialAttack: data.stats[3].base_stat,
-            specialDefense: data.stats[4].base_stat,
-            speed: data.stats[5].base_stat,
-          },
-          abilities: data.abilities.map((a: any) => a.ability.name),
-          moves: data.moves.slice(0, 10).map((m: any) => m.move.name),
-          description,
-          evolutionChain,
-        };
-        setPokemon(details);
-      } catch (e) {
-        console.error("Error fetching Pokemon details:", e);
-        setPokemon(null);
-      } finally {
-        setLoading(false);
+      let evolutionChain = null;
+      if (speciesData.evolution_chain) {
+        const evolutionResponse = await fetch(speciesData.evolution_chain.url, { signal: controller.signal });
+        const evolutionData = await evolutionResponse.json();
+        evolutionChain = await parseEvolutionChain(evolutionData.chain);
       }
-    };
 
-    fetchPokemonDetails();
-  }, [pokemonId, open]);
+      const details: PokemonDetails = {
+        id: data.id,
+        name: data.name,
+        types: data.types.map((t: any) => t.type.name),
+        image: data.sprites.other["official-artwork"].front_default,
+        height: data.height,
+        weight: data.weight,
+        stats: {
+          hp: data.stats[0].base_stat,
+          attack: data.stats[1].base_stat,
+          defense: data.stats[2].base_stat,
+          specialAttack: data.stats[3].base_stat,
+          specialDefense: data.stats[4].base_stat,
+          speed: data.stats[5].base_stat,
+        },
+        abilities: data.abilities.map((a: any) => a.ability.name),
+        moves: data.moves.slice(0, 10).map((m: any) => m.move.name),
+        description,
+        evolutionChain,
+      };
+
+      // Ignore stale results 
+      if (!alive || idAtRequest !== pokemonId) return;
+
+      setPokemon(details);
+    } catch (e: any) {
+      if (e?.name === "AbortError") return; 
+      console.error("Error fetching Pokemon details:", e);
+      if (alive) setPokemon(null);
+    } finally {
+      if (alive) setLoading(false);
+    }
+  })();
+
+  // cleanup cancels the in-flight fetch when id changes or modal closes
+  return () => {
+    alive = false;
+    controller.abort();
+  };
+}, [pokemonId, open]);
 
   const renderEvolutionChain = (node: EvolutionNode) => {
     return (
@@ -247,7 +259,6 @@ export default function PokedexModal({
                 : "border-slate-600"
             }`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={node.image}
               alt={node.name}
@@ -264,7 +275,7 @@ export default function PokedexModal({
 
         {node.evolvesTo.length > 0 && (
           <>
-            <div className="flex flex-col justify-center">
+            <div className="flex flex-col justify-center items-center">
               <ArrowRight
                 className="text-green-400 rotate-90"
                 size={16}
@@ -308,7 +319,6 @@ export default function PokedexModal({
             <div className="relative mb-5">
               <div className="w-20 h-20 border-[10px] border-red-500 border-t-transparent rounded-full animate-spin"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/pball.png"
                   alt="Pokéball"
