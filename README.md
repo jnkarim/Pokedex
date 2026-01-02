@@ -2,7 +2,9 @@
 
 A fully responsive retro-style Pokédex web app that gives off nostalgic vibes while being helpful for gamers who want quick Pokémon info. Built with Next.js and React, it fetches data from the PokéAPI
  and displays all Pokémon with filtering, sorting, and modal details. The UI is styled with Tailwind CSS and optimized for both desktop and mobile devices.
-
+<p align="center">
+  <img src="landing_page.jpg" alt="Pokédex Landing Page" width="600">
+</p>
 ---
 
 ## Features
