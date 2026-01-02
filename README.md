@@ -5,7 +5,6 @@ A fully responsive retro-style Pokédex web app that gives off nostalgic vibes w
 <p align="center">
   <img src="landing_page.jpg" alt="Pokédex Landing Page" width="600">
 </p>
----
 
 ## Features
 
